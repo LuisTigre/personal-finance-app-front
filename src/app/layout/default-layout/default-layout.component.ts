@@ -1,8 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { NgScrollbar } from 'ngx-scrollbar';
+import { Subscription } from 'rxjs';
 
 import { IconDirective } from '@coreui/icons-angular';
+import { LockService } from '../../services/lock.service';
+import { LockScreenComponent } from '../../components/lock-screen/lock-screen.component';
 import {
   ContainerComponent,
   ShadowOnScrollDirective,
@@ -30,6 +34,7 @@ function isOverflown(element: HTMLElement) {
   templateUrl: './default-layout.component.html',
   styleUrls: ['./default-layout.component.scss'],
   imports: [
+    CommonModule,
     SidebarComponent,
     SidebarHeaderComponent,
     SidebarBrandComponent,
@@ -44,9 +49,27 @@ function isOverflown(element: HTMLElement) {
     NgScrollbar,
     RouterOutlet,
     RouterLink,
-    ShadowOnScrollDirective
+    ShadowOnScrollDirective,
+    LockScreenComponent
   ]
 })
-export class DefaultLayoutComponent {
+export class DefaultLayoutComponent implements OnInit, OnDestroy {
   public navItems = [...navItems];
+  public locked = false;
+  private lockSubscription?: Subscription;
+
+  constructor(private lockService: LockService) {}
+
+  ngOnInit(): void {
+    // Subscribe to lock state changes
+    this.lockSubscription = this.lockService.isLocked$.subscribe(locked => {
+      this.locked = locked;
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.lockSubscription) {
+      this.lockSubscription.unsubscribe();
+    }
+  }
 }

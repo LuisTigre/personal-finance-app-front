@@ -144,13 +144,13 @@
         <hr cDropdownDivider />
       </li>
       <li>
-        <a cDropdownItem routerLink="">
+        <a cDropdownItem (click)="onLockAccount()" style="cursor: pointer;">
           <svg cIcon class="me-2" name="cilLockLocked"></svg>
           Lock Account
         </a>
       </li>
       <li>
-        <a cDropdownItem routerLink="">
+        <a cDropdownItem (click)="onLogout()" style="cursor: pointer;">
           <svg cIcon class="me-2" name="cilAccountLogout"></svg>
           Logout
         </a>

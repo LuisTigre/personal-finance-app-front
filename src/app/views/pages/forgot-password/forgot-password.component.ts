@@ -12,16 +12,25 @@ import {
 import { AuthService } from '../../../services/auth.service';
 
 /**
- * Register component for Keycloak authentication
- * Redirects users to Keycloak registration page
- * After registration, users will need to log in to obtain their profile
+ * Forgot Password component for Keycloak authentication
+ * Redirects users to Keycloak reset credentials flow
+ * Users will receive password reset email from Keycloak
  */
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.component.html',
-  imports: [ContainerComponent, RowComponent, ColComponent, CardComponent, CardBodyComponent, ButtonDirective, IconDirective]
+  selector: 'app-forgot-password',
+  templateUrl: './forgot-password.component.html',
+  standalone: true,
+  imports: [
+    ContainerComponent,
+    RowComponent,
+    ColComponent,
+    CardComponent,
+    CardBodyComponent,
+    ButtonDirective,
+    IconDirective
+  ]
 })
-export class RegisterComponent implements OnInit {
+export class ForgotPasswordComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router
@@ -35,12 +44,11 @@ export class RegisterComponent implements OnInit {
   }
 
   /**
-   * Redirect to Keycloak registration page
-   * User will create account via Keycloak UI
-   * After successful registration, they should log in
+   * Redirect to Keycloak reset credentials flow
+   * User will receive email with reset link from Keycloak
    */
-  register(): void {
-    this.authService.register();
+  resetPassword(): void {
+    this.authService.forgotPassword();
   }
 
   /**
