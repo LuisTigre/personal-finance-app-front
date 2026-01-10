@@ -1,0 +1,8 @@
+<ng-container>
+  <c-toast-header [closeButton]="closeButton()">
+    <strong class="me-auto">{{ title() }}</strong>
+  </c-toast-header>
+  <c-toast-body #toastBody [cToastClose]="toastBody.toast ?? undefined">
+    {{ message() }}
+  </c-toast-body>
+</ng-container>

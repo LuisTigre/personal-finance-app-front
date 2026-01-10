@@ -20,6 +20,10 @@ export const routes: Routes = [
         loadChildren: () => import('./views/dashboard/routes').then((m) => m.routes)
       },
       {
+        path: 'wallets',
+        loadChildren: () => import('./views/pages/wallets/routes').then((m) => m.routes)
+      },
+      {
         path: 'theme',
         loadChildren: () => import('./views/theme/routes').then((m) => m.routes)
       },
@@ -56,10 +60,10 @@ export const routes: Routes = [
         loadChildren: () => import('./views/pages/routes').then((m) => m.routes)
       },
       {
-        path: 'profile-example',
-        loadComponent: () => import('./components/user-profile-example/user-profile-example.component').then(m => m.UserProfileExampleComponent),
+        path: 'profile',
+        loadComponent: () => import('./views/pages/profile/profile.component').then(m => m.ProfilePageComponent),
         data: {
-          title: 'User Profile Example'
+          title: 'Profile'
         }
       }
     ]

@@ -24,6 +24,7 @@ import { WidgetsBrandComponent } from '../widgets/widgets-brand/widgets-brand.co
 import { WidgetsDropdownComponent } from '../widgets/widgets-dropdown/widgets-dropdown.component';
 import { DashboardChartsData, IChartProps } from './dashboard-charts-data';
 
+
 interface IUser {
   name: string;
   state: string;
@@ -49,6 +50,8 @@ export class DashboardComponent implements OnInit {
   readonly #document: Document = inject(DOCUMENT);
   readonly #renderer: Renderer2 = inject(Renderer2);
   readonly #chartsData: DashboardChartsData = inject(DashboardChartsData);
+
+
 
   public users: IUser[] = [
     {

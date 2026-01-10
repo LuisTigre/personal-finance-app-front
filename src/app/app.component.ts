@@ -8,10 +8,15 @@ import { ColorModeService } from '@coreui/angular';
 import { IconSetService } from '@coreui/icons-angular';
 import { iconSubset } from './icons/icon-subset';
 
+import { AppToasterHostComponent } from './components/app-toaster-host/app-toaster-host.component';
+
 @Component({
     selector: 'app-root',
-    template: '<router-outlet />',
-    imports: [RouterOutlet]
+    template: `
+      <app-toaster-host />
+      <router-outlet />
+    `,
+    imports: [RouterOutlet, AppToasterHostComponent]
 })
 export class AppComponent implements OnInit {
   title = 'CoreUI Angular Admin Template';

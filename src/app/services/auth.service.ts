@@ -1,30 +1,25 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { KeycloakService } from 'keycloak-angular';
-import { KeycloakProfile } from 'keycloak-js';
-import { from, Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
-/**
- * User profile extracted from Keycloak token
- * - sub: Keycloak user UUID (unique identifier)
- * - username: preferred_username claim
- * - email: user's email
- * - firstName: given_name claim
- * - lastName: family_name claim
- */
-export interface UserProfile {
-  sub: string;  // Keycloak user UUID - this is your user reference
-  username?: string;
-  email?: string;
+export interface UserResponse {
+  id?: string;
   firstName?: string;
   lastName?: string;
+  email?: string;
+  photoUrl?: string;
+  role?: string;
+  active?: boolean;
+  preferredUsername?: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  constructor(private keycloak: KeycloakService) {}
+  constructor(private keycloak: KeycloakService, private http: HttpClient) {}
 
   private buildRedirectUri(redirectUrl?: string): string {
     const fallbackPath = '/dashboard';
@@ -112,27 +107,21 @@ export class AuthService {
    * Returns the user's Keycloak UUID (sub) and other profile information
    * This is the "user reference" you can use to identify the user
    */
-  getUserProfile(): Observable<UserProfile | null> {
+  getUserProfile(): Observable<UserResponse | null> {
     if (!this.isAuthenticatedSync()) {
       return of(null);
     }
 
-    return from(this.keycloak.loadUserProfile()).pipe(
-      map((profile: KeycloakProfile) => {
-        const tokenParsed = this.keycloak.getKeycloakInstance().tokenParsed;
-        return {
-          sub: tokenParsed?.['sub'] || '',  // Keycloak user UUID
-          username: profile.username || tokenParsed?.['preferred_username'],
-          email: profile.email || tokenParsed?.['email'],
-          firstName: profile.firstName || tokenParsed?.['given_name'],
-          lastName: profile.lastName || tokenParsed?.['family_name']
-        };
-      }),
+    return this.http.get<UserResponse>('/api/me').pipe(
       catchError(error => {
         console.error('Error loading user profile:', error);
         return of(null);
       })
     );
+  }
+
+  updateProfileName(userId: string, payload: { firstName: string; lastName: string }): Observable<UserResponse> {
+    return this.http.put<UserResponse>(`/api/users/${userId}`, payload);
   }
 
   /**

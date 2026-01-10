@@ -1,0 +1,164 @@
+<app-create-wallet-dialog
+  [visible]="createWalletDialogVisible()"
+  (visibleChange)="handleCreateWalletDialogVisibleChange($event)"
+/>
+
+<c-modal
+  alignment="center"
+  [visible]="detailsVisible()"
+  (visibleChange)="handleDetailsVisibleChange($event)"
+  size="lg"
+>
+  <c-modal-header>
+    <h5 cModalTitle>Wallet details</h5>
+    <button cButtonClose></button>
+  </c-modal-header>
+  <c-modal-body>
+    <div *ngIf="detailsError()" class="alert alert-danger mb-3" role="alert">
+      {{ detailsError() }}
+    </div>
+
+    <div *ngIf="detailsLoading()" class="d-flex align-items-center gap-2 text-body-secondary">
+      <c-spinner size="sm" aria-hidden="true"></c-spinner>
+      Loading...
+    </div>
+
+    <ng-container *ngIf="!detailsLoading() && selectedWallet() as w">
+      <div class="mb-3">
+        <div class="fw-semibold">{{ w.name }}</div>
+        <div class="text-body-secondary small">
+          {{ w.currency }} • Current: {{ w.currentBalance }} • Initial: {{ w.initialBalance }}
+        </div>
+      </div>
+
+      <hr />
+
+      <div class="mb-2 fw-semibold">Members</div>
+      <div *ngIf="!w.members || w.members.length === 0" class="text-body-secondary mb-3">
+        No members.
+      </div>
+      <table *ngIf="w.members && w.members.length > 0" cTable class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Member</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of w.members; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>
+              <span *ngIf="memberEmailValue(m) as email; else rawMember">{{ email }}</span>
+              <ng-template #rawMember>
+                <pre class="mb-0 small">{{ m | json }}</pre>
+              </ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr />
+
+      <div class="mb-2 fw-semibold">Add member</div>
+      <div *ngIf="addMemberError()" class="alert alert-danger mb-3" role="alert">
+        {{ addMemberError() }}
+      </div>
+
+      <form [formGroup]="addMemberForm" class="row g-3" novalidate>
+        <div class="col-12">
+          <label cLabel for="memberEmail">Member email</label>
+          <input
+            cFormControl
+            id="memberEmail"
+            type="email"
+            formControlName="email"
+            placeholder="user@example.com"
+            [class.is-invalid]="memberEmail.touched && memberEmail.invalid"
+          />
+          <c-form-feedback *ngIf="memberEmail.touched && memberEmail.hasError('required')" [valid]="false">
+            Email is required.
+          </c-form-feedback>
+          <c-form-feedback *ngIf="memberEmail.touched && memberEmail.hasError('email')" [valid]="false">
+            Enter a valid email.
+          </c-form-feedback>
+        </div>
+      </form>
+    </ng-container>
+  </c-modal-body>
+  <c-modal-footer>
+    <button cButton color="secondary" type="button" (click)="handleDetailsVisibleChange(false)">
+      Close
+    </button>
+    <button
+      cButton
+      color="primary"
+      type="button"
+      (click)="submitAddMember()"
+      [disabled]="addMemberLoading() || !selectedWallet()"
+    >
+      <c-spinner *ngIf="addMemberLoading()" size="sm" class="me-2" aria-hidden="true"></c-spinner>
+      Add member
+    </button>
+  </c-modal-footer>
+</c-modal>
+
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header class="d-flex align-items-center justify-content-between">
+        <strong>Wallets</strong>
+        <div class="d-flex align-items-center gap-2">
+          <button cButton color="secondary" type="button" (click)="refresh()">
+            Refresh
+          </button>
+          <button cButton color="success" type="button" (click)="openCreateWalletDialog()">
+            <svg cIcon name="cilWallet" class="me-2"></svg>
+            New Wallet
+          </button>
+        </div>
+      </c-card-header>
+      <c-card-body>
+        <div *ngIf="errorMessage()" class="alert alert-danger mb-3" role="alert">
+          {{ errorMessage() }}
+        </div>
+
+        <div *ngIf="loading()" class="d-flex align-items-center gap-2 text-body-secondary mb-3">
+          <c-spinner size="sm" aria-hidden="true"></c-spinner>
+          Loading wallets...
+        </div>
+
+        <div *ngIf="wallets().length === 0" class="text-body-secondary">
+          No wallets yet.
+        </div>
+
+        <table *ngIf="wallets().length > 0" cTable class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Currency</th>
+              <th class="text-end">Current Balance</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let w of wallets()">
+              <td>{{ w.name }}</td>
+              <td>{{ w.currency }}</td>
+              <td class="text-end">{{ w.currentBalance }}</td>
+              <td class="text-end">
+                <button cButton color="info" variant="outline" size="sm" class="me-2" type="button" (click)="openDetails(w.id)">
+                  <svg cIcon name="cilDescription" class="me-1"></svg>
+                  Details
+                </button>
+                <button cButton color="danger" variant="outline" size="sm" type="button" (click)="archive(w.id)">
+                  <svg cIcon name="cilTrash" class="me-1"></svg>
+                  Archive
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>

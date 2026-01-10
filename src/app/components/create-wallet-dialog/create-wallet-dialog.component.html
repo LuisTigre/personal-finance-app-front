@@ -1,0 +1,84 @@
+<c-modal
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  alignment="center"
+>
+  <c-modal-header>
+    <h5 cModalTitle>Create wallet</h5>
+    <button cButtonClose [disabled]="loading()"></button>
+  </c-modal-header>
+
+  <c-modal-body>
+    <div *ngIf="errorMessage()" class="alert alert-danger mb-3" role="alert">
+      {{ errorMessage() }}
+    </div>
+
+    <form [formGroup]="form" class="needs-validation" novalidate>
+      <div class="mb-3">
+        <label cLabel for="walletName">Name</label>
+        <input
+          cFormControl
+          id="walletName"
+          type="text"
+          formControlName="name"
+          [class.is-invalid]="name.touched && name.invalid"
+          placeholder="My Wallet"
+          autocomplete="off"
+        />
+        <c-form-feedback *ngIf="name.touched && name.hasError('required')" [valid]="false">
+          Name is required.
+        </c-form-feedback>
+        <c-form-feedback *ngIf="name.touched && name.hasError('minlength')" [valid]="false">
+          Name must be at least 3 characters.
+        </c-form-feedback>
+      </div>
+
+      <div class="mb-3">
+        <label cLabel for="walletCurrency">Currency</label>
+        <select
+          cSelect
+          id="walletCurrency"
+          formControlName="currency"
+          [class.is-invalid]="currency.touched && currency.invalid"
+        >
+          <option *ngFor="let c of currencies" [value]="c">{{ c }}</option>
+        </select>
+        <c-form-feedback *ngIf="currency.touched && currency.hasError('required')" [valid]="false">
+          Currency is required.
+        </c-form-feedback>
+      </div>
+
+      <div class="mb-3">
+        <label cLabel for="walletInitialBalance">Initial balance</label>
+        <input
+          cFormControl
+          id="walletInitialBalance"
+          type="number"
+          step="0.01"
+          inputmode="decimal"
+          formControlName="initialBalance"
+          [class.is-invalid]="initialBalance.touched && initialBalance.invalid"
+        />
+        <c-form-feedback *ngIf="initialBalance.touched && initialBalance.hasError('required')" [valid]="false">
+          Initial balance is required.
+        </c-form-feedback>
+      </div>
+    </form>
+  </c-modal-body>
+
+  <c-modal-footer>
+    <button cButton color="secondary" type="button" (click)="cancel()" [disabled]="loading()">
+      Cancel
+    </button>
+    <button
+      cButton
+      color="primary"
+      type="button"
+      (click)="submit()"
+      [disabled]="loading()"
+    >
+      <c-spinner *ngIf="loading()" size="sm" class="me-2" aria-hidden="true"></c-spinner>
+      Create
+    </button>
+  </c-modal-footer>
+</c-modal>

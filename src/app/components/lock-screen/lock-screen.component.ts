@@ -300,10 +300,8 @@ export class LockScreenComponent implements OnInit, OnDestroy {
   private loadUserInfo(): void {
     this.authService.getUserProfile().subscribe(profile => {
       if (profile) {
-        this.userName = profile.firstName && profile.lastName
-          ? `${profile.firstName} ${profile.lastName}`
-          : profile.username || 'User';
-        
+        const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+        this.userName = fullName || profile.firstName || 'User';
         this.userEmail = profile.email || '';
       }
     });

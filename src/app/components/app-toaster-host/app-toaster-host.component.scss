@@ -1,0 +1,10 @@
+:host {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1090;
+}
+
+:host ::ng-deep c-toaster {
+  pointer-events: auto;
+}
