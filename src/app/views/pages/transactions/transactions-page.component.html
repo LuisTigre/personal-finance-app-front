@@ -325,10 +325,15 @@
               </td>
               <td [attr.data-label]="'Currency'" class="tx-td--currency">{{ tx.currency }}</td>
               <td [attr.data-label]="'Wallet'" class="tx-td--wallet">
-                {{ tx.walletName }}
-                <span *ngIf="tx.type === 'TRANSFER'" class="small text-muted d-block">
-                   → {{ tx.toWalletName }}
-                </span>
+                <ng-container *ngIf="tx.type === 'TRANSFER'">
+                  {{ walletName(tx.fromWalletId) }}
+                  <span class="small text-muted d-block">
+                    → {{ walletName(tx.toWalletId) }}
+                  </span>
+                </ng-container>
+                <ng-container *ngIf="tx.type !== 'TRANSFER'">
+                  {{ walletName(tx.walletId) }}
+                </ng-container>
               </td>
               <td [attr.data-label]="'Status'" class="tx-td--status">
                 <span class="badge" [ngClass]="{'bg-success': tx.status === 'POSTED', 'bg-secondary': tx.status === 'DELETED'}">
