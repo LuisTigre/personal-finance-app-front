@@ -17,7 +17,7 @@
       <div class="col-12 col-md-4">
         <label cLabel for="txType">Type</label>
         <select
-          cFormControl
+          cFormSelect
           id="txType"
           formControlName="type"
           [class.is-invalid]="typeCtrl.touched && typeCtrl.invalid"
@@ -78,13 +78,13 @@
       <div class="col-12" *ngIf="createType() !== 'TRANSFER'">
         <label cLabel for="txWallet">Wallet</label>
         <select
-          cFormControl
+          cFormSelect
           id="txWallet"
           formControlName="walletId"
           [class.is-invalid]="walletIdCtrl.touched && walletIdCtrl.invalid"
         >
           <option value="">Select a wallet...</option>
-          <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }})</option>
+          <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }} {{ w.currentBalance | number:'1.2-2' }})</option>
         </select>
         <c-form-feedback *ngIf="walletIdCtrl.touched && walletIdCtrl.hasError('required')" [valid]="false">
           Wallet is required for Expense/Income.
@@ -96,13 +96,13 @@
         <div class="col-12 col-md-6">
           <label cLabel for="txFromWallet">From wallet</label>
           <select
-            cFormControl
+            cFormSelect
             id="txFromWallet"
             formControlName="fromWalletId"
             [class.is-invalid]="fromWalletIdCtrl.touched && fromWalletIdCtrl.invalid"
           >
             <option value="">Select a wallet...</option>
-            <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }})</option>
+            <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }} {{ w.currentBalance | number:'1.2-2' }})</option>
           </select>
           <c-form-feedback *ngIf="fromWalletIdCtrl.touched && fromWalletIdCtrl.hasError('required')" [valid]="false">
             From wallet is required.
@@ -112,13 +112,13 @@
         <div class="col-12 col-md-6">
           <label cLabel for="txToWallet">To wallet</label>
           <select
-            cFormControl
+            cFormSelect
             id="txToWallet"
             formControlName="toWalletId"
             [class.is-invalid]="toWalletIdCtrl.touched && toWalletIdCtrl.invalid"
           >
             <option value="">Select a wallet...</option>
-            <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }})</option>
+            <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }} {{ w.currentBalance | number:'1.2-2' }})</option>
           </select>
           <c-form-feedback *ngIf="toWalletIdCtrl.touched && toWalletIdCtrl.hasError('required')" [valid]="false">
             To wallet is required.
@@ -204,9 +204,9 @@
               <!-- Wallet -->
               <div class="col-12 col-md-3 filter-group">
                 <label cLabel for="filterWallet">Wallet (optional)</label>
-                <select cFormControl id="filterWallet" formControlName="walletId">
+                <select cFormSelect id="filterWallet" formControlName="walletId" class="status-select">
                   <option value="">All wallets</option>
-                  <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }}</option>
+                  <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }} {{ w.currentBalance | number:'1.2-2' }})</option>
                 </select>
               </div>
 
@@ -224,7 +224,7 @@
               <!-- Desktop-only filters -->
               <div class="col-12 col-md-2 d-none d-md-block">
                 <label cLabel for="filterType">Type</label>
-                <select cFormControl id="filterType" formControlName="type">
+                <select cFormSelect id="filterType" formControlName="type">
                   <option value="">All</option>
                   <option value="EXPENSE">Expense</option>
                   <option value="INCOME">Income</option>
@@ -240,14 +240,14 @@
               <!-- Bottom Row for Mobile -->
               <div class="col-12 d-md-none d-flex justify-content-between align-items-center mt-3 filter-bottom-row">
                  <div class="filter-status-wrapper">
-                    <select cFormControl id="filterStatusMobile" formControlName="status" class="status-select">
+                    <select cFormSelect id="filterStatusMobile" formControlName="status" class="status-select">
                       <option value="POSTED">Status 💰</option>
                       <option value="DELETED">Deleted</option>
                     </select>
                  </div>
                  <div class="d-flex gap-2">
                     <button cButton color="primary" class="btn-sm btn-purple" (click)="applyFilters()">
-                       Apply
+                       <svg cIcon name="cilMagnifyingGlass"></svg>
                     </button>
                     <button cButton color="secondary" class="btn-sm btn-gray" (click)="clearFilters()">
                        Clear
@@ -259,13 +259,14 @@
               <div class="col-12 col-md-10 d-none d-md-flex align-items-end gap-2 filter-actions">
                 <div class="filter-group">
                    <label cLabel for="filterStatus">Status</label>
-                   <select cFormControl id="filterStatus" formControlName="status">
+                   <select cFormSelect id="filterStatus" formControlName="status">
                      <option value="POSTED">Posted</option>
                      <option value="DELETED">Deleted</option>
                    </select>
                 </div>
                 <button cButton color="primary" type="button" (click)="applyFilters()" class="tx-apply">
-                  Apply
+                   <svg cIcon name="cilMagnifyingGlass" class="me-1"></svg>
+                   Apply
                 </button>
                 <button cButton color="secondary" type="button" (click)="clearFilters()">
                   Clear
@@ -317,7 +318,9 @@
           <tbody>
             <tr *ngFor="let tx of transactions()">
               <td [attr.data-label]="'Date'" class="tx-td--date">{{ txDateShort(tx.transactionDate) }}</td>
-              <td [attr.data-label]="'Type'" class="tx-td--type">{{ tx.type | titlecase }}</td>
+              <td [attr.data-label]="'Type'" class="tx-td--type">
+                {{ categoryEmoji(tx.category, tx.description, tx.type) }} {{ tx.type | titlecase }}
+              </td>
               <td [attr.data-label]="'Category'" class="tx-td--category">{{ tx.category }}</td>
               <td [attr.data-label]="'Description'" class="tx-td--desc" [ngClass]="'tx-desc--' + (tx.type | lowercase)">{{ tx.description }}</td>
               <td [attr.data-label]="'Amount'" class="tx-td--amount">

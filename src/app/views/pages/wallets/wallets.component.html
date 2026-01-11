@@ -106,16 +106,25 @@
   <c-col xs="12">
     <c-card class="mb-4">
       <c-card-header class="d-flex align-items-center justify-content-between">
-        <strong>Wallets</strong>
+        <div class="d-flex align-items-center gap-3">
+          <strong>Wallets</strong>
+          <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+            <input class="form-check-input my-0" type="checkbox" role="switch" id="showArchivedSwitch" [checked]="showArchived()" (change)="showArchived.set(!showArchived())">
+            <label class="form-check-label text-body-secondary small" for="showArchivedSwitch">Archived</label>
+          </div>
+        </div>
         <div class="d-flex align-items-center gap-2">
-          <button cButton color="secondary" type="button" (click)="refresh()" class="d-none d-md-inline-flex">
-            <svg cIcon name="cilReload" class="me-2"></svg>
-            Refresh
-          </button>
-          <button cButton color="success" type="button" (click)="openCreateWalletDialog()" class="d-none d-md-inline-flex">
-            <svg cIcon name="cilPlus" class="me-2"></svg>
-            New Wallet
-          </button>
+        <button
+           cButton
+           color="light"
+           variant="outline"
+           type="button"
+           (click)="refresh()"
+           class="mobile-add-btn d-md-none"
+           aria-label="New Wallet"
+         >
+           <svg cIcon name="cilReload"></svg>
+         </button>      
            <!-- Mobile: round + button -->
            <button
            cButton
@@ -140,11 +149,11 @@
           Loading wallets...
         </div>
 
-        <div *ngIf="wallets().length === 0" class="text-body-secondary">
-          No wallets yet.
+        <div *ngIf="filteredWallets().length === 0" class="text-body-secondary">
+          No {{ showArchived() ? 'archived' : '' }} wallets found.
         </div>
 
-        <table *ngIf="wallets().length > 0" cTable class="table table-hover align-middle">
+        <table *ngIf="filteredWallets().length > 0" cTable class="table table-hover align-middle wallet-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -154,18 +163,19 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let w of wallets()">
-              <td>{{ w.name }}</td>
-              <td>{{ w.currency }}</td>
-              <td class="text-end">{{ w.currentBalance }}</td>
-              <td class="text-end">
-                <button cButton color="info" variant="outline" size="sm" class="me-2" type="button" (click)="openDetails(w.id)">
-                  <svg cIcon name="cilMagnifyingGlass" class="me-1"></svg>
-                  Details
+            <tr *ngFor="let w of filteredWallets()">
+              <td [attr.data-label]="'Name'" class="wallet-td--name">{{ w.name }}</td>
+              <td [attr.data-label]="'Currency'" class="wallet-td--currency">{{ w.currency }}</td>
+              <td [attr.data-label]="'Current Balance'" class="wallet-td--balance">{{ w.currentBalance | number:'1.2-2' }}</td>
+              <td class="wallet-td--actions text-end">
+                <button *ngIf="w.status !== 'ARCHIVED'" cButton color="info" variant="outline" size="xs" class="me-2" type="button" (click)="openDetails(w.id)">
+                  <svg cIcon name="cilMagnifyingGlass"></svg>
                 </button>
-                <button cButton color="danger" variant="outline" size="sm" type="button" (click)="archive(w.id)">
-                  <svg cIcon name="cilTrash" class="me-1"></svg>
-                  Archive
+                <button *ngIf="w.status !== 'ARCHIVED' && isOwner(w)" cButton color="danger" variant="outline" size="xs" type="button" (click)="openDelete(w)">
+                  <svg cIcon name="cilTrash"></svg>
+                </button>
+                <button *ngIf="w.status === 'ARCHIVED' && isOwner(w)" cButton color="warning" variant="outline" size="xs" type="button" (click)="unarchive(w.id)" title="Restore Wallet">
+                   <svg cIcon name="cilReload"></svg> Restore
                 </button>
               </td>
             </tr>
@@ -175,3 +185,23 @@
     </c-card>
   </c-col>
 </c-row>
+
+<c-modal [visible]="deleteVisible()" (visibleChange)="handleDeleteVisibleChange($event)" alignment="center">
+  <c-modal-header>
+    <h5 cModalTitle>Delete Wallet</h5>
+    <button cButtonClose></button>
+  </c-modal-header>
+  <c-modal-body>
+    <p>Are you sure you want to delete this wallet?</p>
+    <p class="text-body-secondary small">
+      If it has transaction history, it will be <strong>archived</strong> instead of permanently deleted.
+    </p>
+  </c-modal-body>
+  <c-modal-footer>
+    <button cButton color="secondary" (click)="handleDeleteVisibleChange(false)">Cancel</button>
+    <button cButton color="danger" (click)="confirmDelete()" [disabled]="deleteLoading()">
+       <c-spinner *ngIf="deleteLoading()" size="sm" class="me-2" aria-hidden="true"></c-spinner>
+       Delete
+    </button>
+  </c-modal-footer>
+</c-modal>

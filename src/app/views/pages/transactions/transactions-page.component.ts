@@ -15,6 +15,7 @@ import {
   DropdownMenuDirective,
   DropdownToggleDirective,
   FormControlDirective,
+  FormSelectDirective,
   FormFeedbackComponent,
   FormLabelDirective,
   ModalBodyComponent,
@@ -27,6 +28,7 @@ import {
   TableDirective,
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
+import { resolveEmoji } from '../../../shared/emoji/emoji-rules';
 import { finalize } from 'rxjs/operators';
 
 import { AppToastService } from '../../../services/app-toast.service';
@@ -126,6 +128,7 @@ function nowLocalDateTimeInputValue(): string {
     ModalFooterComponent,
     FormLabelDirective,
     FormControlDirective,
+    FormSelectDirective,
     FormFeedbackComponent,
   ]
 })
@@ -152,7 +155,8 @@ export class TransactionsPageComponent {
   readonly createLoading = signal(false);
   readonly createError = signal<string | null>(null);
 
-  readonly createType = computed<TransactionType>(() => this.createForm.controls.type.value);
+  // We use a manual signal instead of computed because formControl.value is not a signal dependency
+  readonly createType = signal<TransactionType>('EXPENSE');
 
   readonly transferSameWalletError = computed(() => {
     if (this.createType() !== 'TRANSFER') {
@@ -214,7 +218,8 @@ export class TransactionsPageComponent {
 
     this.resetCreateWalletControls();
 
-    this.createForm.controls.type.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+    this.createForm.controls.type.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((val) => {
+      this.createType.set(val);
       this.createError.set(null);
       this.resetCreateWalletControls();
     });
@@ -254,19 +259,8 @@ export class TransactionsPageComponent {
     }
   }
 
-  categoryEmoji(category: string | null | undefined, type: TransactionType): string {
-    const key = (category || '').trim().toLowerCase();
-    if (key === 'accident') return '🚗';
-    if (key === 'food') return '🥗';
-    if (key === 'salary') return '💸';
-    if (key === 'shopping') return '🛍️';
-    if (key === 'rent') return '🏠';
-    if (key === 'transport' || key === 'transportation') return '🚌';
-    if (key === 'health' || key === 'medical') return '🩺';
-    if (key === 'utilities') return '💡';
-
-    // Fallback: keep the UI modern/consistent even for unknown categories.
-    return this.txTypeEmoji(type);
+  categoryEmoji(category: string | null | undefined, description: string | null | undefined, type: TransactionType): string {
+    return resolveEmoji(category, description);
   }
 
   txWalletLine(tx: TransactionResponse): string {

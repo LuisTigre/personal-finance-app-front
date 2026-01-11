@@ -1,21 +1,140 @@
+@use 'sass:color';
+
+$card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
 :host {
   display: block;
+}
+
+/* Custom extra small button */
+.btn-xs {
+  --cui-btn-padding-y: 0.125rem;
+  --cui-btn-padding-x: 0.375rem;
+  --cui-btn-font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  
+  svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+}
+
+/* Modal Content Tweaks */
+c-modal-body {
+  // General text size reduction
+  font-size: 0.875rem;
+
+  // Form controls (Add Member)
+  label {
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .form-control, .form-select {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  // Members Table
+  .table {
+    font-size: 0.8125rem;
+    
+    th, td {
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+  }
+}
+
+/* --- MOBILE SPECIFIC (Card Layout) --- */
+@media (max-width: 720px) {
+  
+  /* Reset Table to Block */
+  .wallet-table, 
+  .wallet-table tbody, 
+  .wallet-table tr, 
+  .wallet-table td { 
+    display: block; 
+    border: none;
+  }
+  
+  .wallet-table thead { display: none; }
+  
+  /* The Card Container (TR) */
+  .wallet-table tr {
+    display: grid;
+    grid-template-columns: 1fr auto; /* Name | Balance */
+    grid-template-rows: auto auto auto; /* Name | Currency | Actions */
+    grid-template-areas:
+      "name balance"
+      "currency currency"
+      "actions actions";
+      
+    background: var(--cui-card-bg, #fff);
+    margin-bottom: 0.75rem; /* 12px */
+    padding: 0.9375rem; /* 15px */
+    border-radius: 0.75rem; /* 12px */
+    box-shadow: $card-shadow;
+    position: relative;
+    border-width: 0 !important; 
+  }
+
+  .wallet-td--name {
+    grid-area: name;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--cui-body-color, #2c2c2e);
+    padding: 0 !important;
+  }
+
+  .wallet-td--balance {
+    grid-area: balance;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: right;
+    padding: 0 !important;
+    color: var(--cui-body-color, #2c2c2e);
+  }
+
+  .wallet-td--currency {
+    grid-area: currency;
+    font-size: 0.875rem;
+    color: var(--cui-secondary-color, #8e8e93);
+    padding: 0 !important;
+    margin-top: 0.25rem;
+  }
+
+  .wallet-td--actions {
+    grid-area: actions;
+    margin-top: 1rem;
+    padding: 0.75rem 0 0 0 !important;
+    border-top: 1px solid var(--cui-border-color, #f2f3f7);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    
+    button {
+      /* Ensure buttons fit well on mobile */
+    }
+  }
 }
 
 .mobile-add-btn {
   width: 2.25rem; /* 36px */
   height: 2.25rem;
-  background: white;
-  border: 1px solid #e5e5ea;
+  background: var(--cui-card-bg, #fff);
+  border: 1px solid var(--cui-border-color, #e5e5ea);
   border-radius: 0.625rem; /* 10px */
-  color: #555;
+  color: var(--cui-body-color, #555);
   display: flex !important;
   align-items: center;
   justify-content: center;
   box-shadow: none;
   padding: 0;
 
-  &:hover { background: #f9f9f9; }
+  &:hover { background: var(--cui-tertiary-bg, #f9f9f9); }
   
   svg { 
     width: 1.5rem; 

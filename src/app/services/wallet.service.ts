@@ -29,6 +29,7 @@ export interface Wallet {
   createdAt?: string;
   updatedAt?: string;
   members?: unknown[];
+  status?: 'ACTIVE' | 'ARCHIVED' | string;
 }
 
 export type WalletResponse = Wallet;
@@ -47,6 +48,7 @@ type WalletApiResponse = {
   created_at?: string;
   updated_at?: string;
   members?: unknown[];
+  status?: string;
 };
 
 function toNumberOrUndefined(value: unknown): number | undefined {
@@ -67,6 +69,7 @@ function normalizeWallet(raw: WalletApiResponse): WalletResponse {
     createdAt: raw.createdAt ?? raw.created_at,
     updatedAt: raw.updatedAt ?? raw.updated_at,
     members: raw.members,
+    status: raw.status,
   };
 }
 
@@ -133,8 +136,53 @@ export class WalletService {
     return this.http.put<WalletApiResponse>(`/api/wallets/${walletId}/archive`, null).pipe(
       map(normalizeWallet),
       tap((updated) => {
-        // Default UX: remove archived wallets from the list.
-        this.wallets.update((current) => current.filter((w) => w.id !== updated.id));
+        // Update local state instead of removing, so we can show archived wallets if toggled.
+        this.wallets.update((current) => {
+          const index = current.findIndex((w) => w.id === updated.id);
+          if (index === -1) {
+            return current;
+          }
+          const copy = [...current];
+          copy[index] = updated;
+          return copy;
+        });
+      })
+    );
+  }
+
+  unarchiveWallet(walletId: string): Observable<WalletResponse> {
+    return this.http.put<WalletApiResponse>(`/api/wallets/${walletId}/unarchive`, null).pipe(
+      map(normalizeWallet),
+      tap((updated) => {
+        this.wallets.update((current) => {
+          const idx = current.findIndex((w) => w.id === updated.id);
+          if (idx !== -1) {
+            const copy = [...current];
+            copy[idx] = updated;
+            return copy;
+          }
+          // If for some reason it wasn't in the list
+          return [updated, ...current];
+        });
+      })
+    );
+  }
+
+  deleteWallet(walletId: string): Observable<void> {
+    // Try to permanently delete first.
+    // If backend returns 405 (Method Not Allowed), it implies we must archive it (soft delete)
+    // because it has transactions or other dependencies.
+    return this.http.delete<void>(`/api/wallets/${walletId}`).pipe(
+      tap(() => {
+        // Success: Permanently removed
+        this.wallets.update((current) => current.filter((w) => w.id !== walletId));
+      }),
+      catchError((err) => {
+        if (err.status === 405) {
+          // Fallback to archive
+          return this.archiveWallet(walletId).pipe(map(() => void 0));
+        }
+        return throwError(() => err);
       })
     );
   }
