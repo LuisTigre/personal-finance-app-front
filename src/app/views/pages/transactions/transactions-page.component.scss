@@ -78,6 +78,12 @@ $card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   padding-left: 0.25rem;
 }
 
+@media (max-width: 767.98px) {
+  #filterType {
+    font-size: 0.65rem; /* Smaller text on mobile */
+  }
+}
+
 /* Mobile Filter Bottom Row */
 .filter-bottom-row .status-select {
   border-radius: 0.375rem;
@@ -157,7 +163,7 @@ $card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* --- MOBILE SPECIFIC (Card Layout) --- */
-@media (max-width: 720px) {
+@media (max-width: 1200px) {
   
   /* Reset Table to Block */
   .tx-table, 
@@ -213,11 +219,11 @@ $card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   /* Type */
   .tx-td--type {
     grid-area: type;
-    font-size: 0.875rem; /* 14px */
+    font-size: 0.8125rem; /* Reduced to ~13px */
     font-weight: 700;
     color: var(--cui-body-color, #2c2c2e);
     padding: 0 !important;
-    margin-right: 0.25rem;
+    margin-right: 0.125rem;
     white-space: nowrap;
     
     &::after {
@@ -229,7 +235,7 @@ $card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   /* Category */
   .tx-td--category {
     grid-area: cat;
-    font-size: 0.875rem; /* 14px */
+    font-size: 0.8125rem; /* Reduced to ~13px */
     font-weight: 700;
     color: var(--cui-body-color, #2c2c2e);
     padding: 0 !important;
@@ -264,11 +270,11 @@ $card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     
     padding: 0 !important;
     text-align: right;
-    font-size: 0.875rem; /* 14px */
+    font-size: 0.8125rem; /* Reduced to ~13px */
     font-weight: 600;
     color: var(--cui-body-color, #2c2c2e);
     align-self: start;
-    padding-left: 0.5rem !important;
+    padding-left: 0.25rem !important; /* Reduced padding */
     white-space: nowrap;
     padding-right: 1.5rem !important; /* Space for dots */
   }
@@ -328,6 +334,83 @@ $card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       &::after { display: none; } /* hide dropdown arrow */
     }
   }
+
+  /* --- Mobile Expansion Animation Logic --- */
+  
+  /* When parent is expanded, remove bottom radius/margin so it connects to details */
+  .expanded-row-parent {
+      margin-bottom: 0 !important;
+      border-bottom-left-radius: 0 !important;
+      border-bottom-right-radius: 0 !important;
+      box-shadow: none !important; /* Remove shadow to blend */
+      border-bottom: 1px solid #f2f2f7 !important;
+  }
+  
+  /* The Details Row (Mobile) */
+  .tx-details-row {
+      display: block !important;
+      background: #f9f9f9;
+      margin-top: 0 !important;
+      margin-bottom: 0.75rem;
+      padding: 0 !important;
+      border-bottom-left-radius: 0.75rem;
+      border-bottom-right-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Restore shadow */
+      overflow: hidden;
+
+      td {
+          display: block !important;
+          padding: 0 !important;
+          border: none !important;
+      }
+      
+      .tx-details-panel {
+          padding: 0; /* Let inner list handle padding */
+      }
+  }
+}
+
+/* --- Common Expansion Styles (Desktop & Mobile) --- */
+
+.btn-expand {
+    transition: transform 0.3s ease;
+    color: #8e8e93;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    
+    &:hover {
+        color: #555;
+        background-color: rgba(0,0,0,0.05);
+        border-radius: 50%;
+    }
+    
+    &.expanded {
+        transform: rotate(180deg);
+        color: #333;
+    }
+    
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+.item-list {
+    background-color: #f9f9f9;
+    border-top: 1px solid #eee;
+    
+    .item-row:last-child {
+        border-bottom: none !important;
+    }
+}
+
+/* Mobile Status Container Fix */
+.mobile-status-container {
+   /* Ensure it fits in the grid area */
+   justify-content: flex-end;
 }
 
 /* Modal Form Controls: Compact Selects */
@@ -335,5 +418,54 @@ c-modal-body {
   .form-select, select.form-control {
     font-size: 0.8125rem; /* ~13px */
     padding: 0.375rem 0.5rem;
+  }
+}
+
+/* --- Dropdown Styling --- */
+::ng-deep .dropdown-menu {
+  border: 1px solid var(--cui-border-color, #e5e5ea) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 1rem !important; /* 16px soft round */
+  padding: 0.5rem !important;
+  min-width: 180px;
+  background-color: #fff !important;
+  overflow: hidden; /* For radius */
+  
+  li {
+    list-style: none;
+  }
+
+  /* Items */
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.6rem 1rem !important;
+    font-size: 0.875rem !important; /* 14px */
+    font-weight: 500;
+    color: #444; 
+    border-radius: 0.625rem; /* 10px */
+    transition: all 0.15s ease-in-out;
+    border: none;
+    background: transparent;
+
+    &:hover, &:focus, &:active {
+      background-color: #f5f5f7 !important;
+      color: #000 !important;
+      transform: translateX(2px);
+    }
+
+    &:disabled {
+      color: #d1d1d6 !important;
+      pointer-events: none;
+      background-color: transparent !important;
+    }
+  }
+
+  /* Divider */
+  .dropdown-divider {
+    border-top: 1px solid #f2f2f7;
+    margin: 0.25rem 0;
+    opacity: 1;
   }
 }

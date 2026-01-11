@@ -166,7 +166,7 @@
             <tr *ngFor="let w of filteredWallets()">
               <td [attr.data-label]="'Name'" class="wallet-td--name">{{ w.name }}</td>
               <td [attr.data-label]="'Currency'" class="wallet-td--currency">{{ w.currency }}</td>
-              <td [attr.data-label]="'Current Balance'" class="wallet-td--balance">{{ w.currentBalance | number:'1.2-2' }}</td>
+              <td [attr.data-label]="'Current Balance'" class="wallet-td--balance text-end">{{ w.currentBalance | number:'1.2-2' }}</td>
               <td class="wallet-td--actions text-end">
                 <button *ngIf="w.status !== 'ARCHIVED'" cButton color="info" variant="outline" size="xs" class="me-2" type="button" (click)="openDetails(w.id)">
                   <svg cIcon name="cilMagnifyingGlass"></svg>

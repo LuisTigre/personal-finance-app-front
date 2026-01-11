@@ -15,7 +15,6 @@ import {
   DropdownMenuDirective,
   DropdownToggleDirective,
   FormControlDirective,
-  FormSelectDirective,
   FormFeedbackComponent,
   FormLabelDirective,
   ModalBodyComponent,
@@ -28,6 +27,7 @@ import {
   TableDirective,
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
+import { TransactionSplitModalComponent } from '../../../components/transaction-split-modal/transaction-split-modal.component';
 import { resolveEmoji } from '../../../shared/emoji/emoji-rules';
 import { finalize } from 'rxjs/operators';
 
@@ -40,6 +40,7 @@ import {
   TransactionService,
   TransactionStatus,
   TransactionType,
+  TransactionItem
 } from '../../../services/transaction.service';
 import { WalletResponse, WalletService } from '../../../services/wallet.service';
 
@@ -128,8 +129,8 @@ function nowLocalDateTimeInputValue(): string {
     ModalFooterComponent,
     FormLabelDirective,
     FormControlDirective,
-    FormSelectDirective,
     FormFeedbackComponent,
+    TransactionSplitModalComponent
   ]
 })
 export class TransactionsPageComponent {
@@ -150,10 +151,20 @@ export class TransactionsPageComponent {
 
   readonly transactions = signal<TransactionResponse[]>([]);
   readonly totals = signal<ListTransactionsResponse['totals'] | null>(null);
+  readonly filteredCurrency = signal<string | null>(null);
 
   readonly createVisible = signal(false);
   readonly createLoading = signal(false);
   readonly createError = signal<string | null>(null);
+
+  readonly splitVisible = signal(false);
+  readonly splitTransaction = signal<TransactionResponse | null>(null);
+
+  // Expansion Logic State
+  readonly expandedIds = signal<Set<string>>(new Set());
+  readonly itemsByTransactionId = signal<Map<string, TransactionItem[]>>(new Map());
+  readonly loadingItemsIds = signal<Set<string>>(new Set());
+  readonly errorItemsIds = signal<Map<string, string>>(new Map());
 
   // We use a manual signal instead of computed because formControl.value is not a signal dependency
   readonly createType = signal<TransactionType>('EXPENSE');
@@ -289,6 +300,88 @@ export class TransactionsPageComponent {
     return `${date}, ${time}`;
   }
 
+  // --- Expansion Logic ---
+
+  hasExpandableItems(tx: TransactionResponse): boolean {
+    // Show expansion if specifically marked itemized, has count > 0, OR is legacy "Mix of Products" category
+    return !!tx.isItemized || (!!tx.itemCount && tx.itemCount > 0) || tx.category === 'MIXED_PRODUCTS';
+  }
+
+  isExpanded(txId: string): boolean {
+    return this.expandedIds().has(txId);
+  }
+
+  toggleExpand(tx: TransactionResponse, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    if (!this.hasExpandableItems(tx)) {
+      return;
+    }
+
+    const currentExpanded = new Set(this.expandedIds());
+    if (currentExpanded.has(tx.id)) {
+      currentExpanded.delete(tx.id);
+      this.expandedIds.set(currentExpanded);
+    } else {
+      currentExpanded.add(tx.id);
+      this.expandedIds.set(currentExpanded);
+      this.loadItemsIfNeeded(tx.id);
+    }
+  }
+
+  private loadItemsIfNeeded(id: string) {
+    if (this.itemsByTransactionId().has(id)) {
+      return;
+    }
+
+    const currentLoading = new Set(this.loadingItemsIds());
+    currentLoading.add(id);
+    this.loadingItemsIds.set(currentLoading);
+
+    // Clear previous error if any
+    const currentErrors = new Map(this.errorItemsIds());
+    if (currentErrors.has(id)) {
+      currentErrors.delete(id);
+      this.errorItemsIds.set(currentErrors);
+    }
+
+    this.txService.getTransactionDetails(id)
+      .pipe(
+        finalize(() => {
+          const loading = new Set(this.loadingItemsIds());
+          loading.delete(id);
+          this.loadingItemsIds.set(loading);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: (res) => {
+          const itemsMap = new Map(this.itemsByTransactionId());
+          itemsMap.set(id, res.items);
+          this.itemsByTransactionId.set(itemsMap);
+        },
+        error: (err) => {
+          const errorMap = new Map(this.errorItemsIds());
+          errorMap.set(id, 'Failed to load items');
+          this.errorItemsIds.set(errorMap);
+        }
+      });
+  }
+
+  getItemsFor(txId: string): TransactionItem[] {
+    return this.itemsByTransactionId().get(txId) || [];
+  }
+
+  isLoadingItems(txId: string): boolean {
+    return this.loadingItemsIds().has(txId);
+  }
+
+  getItemsError(txId: string): string | undefined {
+    return this.errorItemsIds().get(txId);
+  }
+
   netClass(net: number): string {
     if (net > 0) return 'text-success';
     if (net < 0) return 'text-danger';
@@ -317,8 +410,16 @@ export class TransactionsPageComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
 
+    const filters = this.buildFilters();
+    if (filters.walletId) {
+      const w = this.wallets().find((x) => x.id === filters.walletId);
+      this.filteredCurrency.set(w?.currency ?? null);
+    } else {
+      this.filteredCurrency.set(null);
+    }
+
     this.txService
-      .listTransactions(this.buildFilters())
+      .listTransactions(filters)
       .pipe(finalize(() => this.loading.set(false)), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
@@ -370,6 +471,30 @@ export class TransactionsPageComponent {
         toWalletId: '',
       });
     }
+  }
+
+  openSplit(tx: TransactionResponse): void {
+    this.splitTransaction.set(tx);
+    this.splitVisible.set(true);
+  }
+
+  handleSplitVisibleChange(visible: boolean): void {
+    this.splitVisible.set(visible);
+    if (!visible) {
+      this.splitTransaction.set(null);
+    }
+  }
+
+  handleSplitSaved(): void {
+    const tx = this.splitTransaction();
+    if (tx && this.isExpanded(tx.id)) {
+        // Force reload by clearing cache
+        const items = new Map(this.itemsByTransactionId());
+        items.delete(tx.id);
+        this.itemsByTransactionId.set(items);
+        this.loadItemsIfNeeded(tx.id);
+    }
+    this.refresh();
   }
 
   submitCreate(): void {

@@ -29,6 +29,8 @@ export interface TransactionResponse {
   fromWalletId?: string | null;
   toWalletId?: string | null;
   createdByUserId: string;
+  isItemized?: boolean;
+  itemCount?: number;
 }
 
 export interface Totals {
@@ -49,6 +51,25 @@ export interface ListTransactionsFilters {
   type?: TransactionType;
   q?: string;
   status?: TransactionStatus;
+}
+
+export interface TransactionItem {
+  id?: string; // Optional if existing
+  name: string;
+  category: string;
+  amount: number;
+  note?: string;
+}
+
+export interface UpdateTransactionItemsRequest {
+  items: TransactionItem[];
+}
+
+export interface TransactionDetailsResponse {
+  transaction: TransactionResponse;
+  items: TransactionItem[];
+  allocatedTotal: number;
+  isBalanced: boolean;
 }
 
 @Injectable({
@@ -78,6 +99,18 @@ export class TransactionService {
     setIf('status', filters.status);
 
     return this.http.get<ListTransactionsResponse>('/api/transactions', { params });
+  }
+
+  getTransactionDetails(id: string): Observable<TransactionDetailsResponse> {
+    return this.http.get<TransactionDetailsResponse>(`/api/transactions/${id}`);
+  }
+
+  updateTransactionItems(id: string, items: TransactionItem[]): Observable<void> {
+    return this.http.put<void>(`/api/transactions/${id}/items`, { items });
+  }
+
+  clearTransactionItems(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/transactions/${id}/items`);
   }
 
   deleteTransaction(id: string): Observable<TransactionResponse> {

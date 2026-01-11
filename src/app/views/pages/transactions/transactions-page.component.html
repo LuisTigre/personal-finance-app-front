@@ -156,6 +156,13 @@
   </c-modal-footer>
 </c-modal>
 
+<app-transaction-split-modal
+  [visible]="splitVisible()"
+  [transaction]="splitTransaction()"
+  (visibleChange)="handleSplitVisibleChange($event)"
+  (saved)="handleSplitSaved()"
+></app-transaction-split-modal>
+
 <c-row>
   <c-col xs="12">
     <c-card class="mb-4">
@@ -163,21 +170,18 @@
         <span class="tx-title">Transactions</span>
         <div class="d-flex align-items-center gap-2">
           <!-- Desktop/tablet: match screenshot buttons -->
-          <button cButton color="secondary" type="button" (click)="refresh()" class="d-none d-md-inline-flex">
-            Refresh
-          </button>
-
+        
           <button
             cButton
-            color="success"
+            color="light"
+            variant="outline"
             type="button"
-            (click)="openCreate()"
-            class="d-none d-md-inline-flex"
+            (click)="refresh()"
+            class="tx-add-btn d-md-none"
+            aria-label="Add transaction"
           >
-            <svg cIcon name="cilPlus" class="me-2"></svg>
-            Create
+            <svg cIcon name="cilReload"></svg>
           </button>
-
           <!-- Mobile: round + button (matches reference) -->
           <button
             cButton
@@ -202,7 +206,7 @@
           <c-card-body>
             <form [formGroup]="filtersForm" class="row g-3 tx-filters-grid" novalidate>
               <!-- Wallet -->
-              <div class="col-12 col-md-3 filter-group">
+              <div class="col-12 col-md-6 col-lg-3 filter-group">
                 <label cLabel for="filterWallet">Wallet (optional)</label>
                 <select cFormSelect id="filterWallet" formControlName="walletId" class="status-select">
                   <option value="">All wallets</option>
@@ -210,19 +214,8 @@
                 </select>
               </div>
 
-              <!-- Dates -->
-              <div class="col-6 col-md-2 filter-group">
-                <label cLabel for="filterFrom">From</label>
-                <input cFormControl id="filterFrom" type="datetime-local" formControlName="fromLocal" />
-              </div>
-
-              <div class="col-6 col-md-2 filter-group">
-                <label cLabel for="filterTo">To</label>
-                <input cFormControl id="filterTo" type="datetime-local" formControlName="toLocal" />
-              </div>
-
-              <!-- Desktop-only filters -->
-              <div class="col-12 col-md-2 d-none d-md-block">
+              <!-- Type Filter -->
+              <div class="col-12 col-md-6 col-lg-2 filter-group">
                 <label cLabel for="filterType">Type</label>
                 <select cFormSelect id="filterType" formControlName="type">
                   <option value="">All</option>
@@ -232,7 +225,19 @@
                 </select>
               </div>
 
-              <div class="col-12 col-md-3 d-none d-md-block">
+              <!-- Dates -->
+              <div class="col-6 col-md-4 col-lg-2 filter-group"> 
+                <label cLabel for="filterFrom">From</label>
+                <input cFormControl id="filterFrom" type="datetime-local" formControlName="fromLocal" />
+              </div>
+
+              <div class="col-6 col-md-4 col-lg-2 filter-group">
+                <label cLabel for="filterTo">To</label>
+                <input cFormControl id="filterTo" type="datetime-local" formControlName="toLocal" />
+              </div>
+
+              <!-- Search -->
+              <div class="col-12 col-md-3 filter-group">
                 <label cLabel for="filterQ">Search</label>
                 <input cFormControl id="filterQ" type="text" formControlName="q" placeholder="description/category" />
               </div>
@@ -264,11 +269,11 @@
                      <option value="DELETED">Deleted</option>
                    </select>
                 </div>
-                <button cButton color="primary" type="button" (click)="applyFilters()" class="tx-apply">
+                <button cButton color="primary" type="button" size="sm" (click)="applyFilters()" class="tx-apply">
                    <svg cIcon name="cilMagnifyingGlass" class="me-1"></svg>
                    Apply
                 </button>
-                <button cButton color="secondary" type="button" (click)="clearFilters()">
+                <button cButton color="secondary" type="button" size="sm" (click)="clearFilters()">
                   Clear
                 </button>
               </div>
@@ -279,15 +284,24 @@
         <div class="totals mb-3" *ngIf="totals() as t">
           <div class="summary-card">
             <span class="label">💰 Total income</span>
-            <span class="value">{{ t.totalIncome | number:'1.0-0' }}</span>
+            <span class="value">
+              {{ t.totalIncome | number:'1.0-0' }}
+              <small *ngIf="filteredCurrency()" class="ms-1">{{ filteredCurrency() }}</small>
+            </span>
           </div>
           <div class="summary-card">
             <span class="label">💳 Total expense</span>
-            <span class="value">{{ t.totalExpense | number:'1.0-0' }}</span>
+            <span class="value">
+              {{ t.totalExpense | number:'1.0-0' }}
+              <small *ngIf="filteredCurrency()" class="ms-1">{{ filteredCurrency() }}</small>
+            </span>
           </div>
           <div class="summary-card">
             <span class="label">🧮 Net</span>
-            <span class="value" [class.negative]="t.net < 0">{{ t.net | number:'1.0-0' }}</span>
+            <span class="value" [class.negative]="t.net < 0">
+              {{ t.net | number:'1.0-0' }}
+              <small *ngIf="filteredCurrency()" class="ms-1">{{ filteredCurrency() }}</small>
+            </span>
           </div>
         </div>
 
@@ -309,59 +323,114 @@
               <th>Category</th>
               <th>Description</th>
               <th class="text-end">Amount</th>
-              <th>Currency</th>
               <th>Wallet / From → To</th>
               <th>Status</th>
               <th class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let tx of transactions()">
-              <td [attr.data-label]="'Date'" class="tx-td--date">{{ txDateShort(tx.transactionDate) }}</td>
-              <td [attr.data-label]="'Type'" class="tx-td--type">
-                {{ categoryEmoji(tx.category, tx.description, tx.type) }} {{ tx.type | titlecase }}
-              </td>
-              <td [attr.data-label]="'Category'" class="tx-td--category">{{ tx.category }}</td>
-              <td [attr.data-label]="'Description'" class="tx-td--desc" [ngClass]="'tx-desc--' + (tx.type | lowercase)">{{ tx.description }}</td>
-              <td [attr.data-label]="'Amount'" class="tx-td--amount">
-                {{ tx.amount | number:'1.2-2' }} <span class="d-md-none">{{ tx.currency }}</span>
-              </td>
-              <td [attr.data-label]="'Currency'" class="tx-td--currency">{{ tx.currency }}</td>
-              <td [attr.data-label]="'Wallet'" class="tx-td--wallet">
-                <ng-container *ngIf="tx.type === 'TRANSFER'">
-                  {{ walletName(tx.fromWalletId) }}
-                  <span class="small text-muted d-block">
-                    → {{ walletName(tx.toWalletId) }}
+            <ng-container *ngFor="let tx of transactions()">
+              <tr [class.expanded-row-parent]="isExpanded(tx.id)">
+                <td [attr.data-label]="'Date'" class="tx-td--date">{{ txDateShort(tx.transactionDate) }}</td>
+                <td [attr.data-label]="'Type'" class="tx-td--type">
+                  {{ categoryEmoji(tx.category, tx.description, tx.type) }} {{ tx.type | titlecase }}
+                </td>
+                <td [attr.data-label]="'Category'" class="tx-td--category">
+                  {{ tx.category }}
+                  <span *ngIf="tx.category === 'MIXED_PRODUCTS'" class="badge bg-secondary ms-1" title="Itemized">
+                     <svg cIcon name="cilList" size="sm" style="width: 10px; height: 10px;"></svg> Items
                   </span>
-                </ng-container>
-                <ng-container *ngIf="tx.type !== 'TRANSFER'">
-                  {{ walletName(tx.walletId) }}
-                </ng-container>
-              </td>
-              <td [attr.data-label]="'Status'" class="tx-td--status">
-                <span class="badge" [ngClass]="{'bg-success': tx.status === 'POSTED', 'bg-secondary': tx.status === 'DELETED'}">
-                  {{ tx.status }}
-                </span>
-              </td>
-              <td class="tx-td--actions text-end">
-                <c-dropdown alignment="end" variant="btn-group">
-                  <button cButton cDropdownToggle color="transparent" size="sm" class="tx-dots p-0 border-0">
-                    ⋮
-                  </button>
-                  <ul cDropdownMenu>
-                    <li>
-                      <button 
-                        cDropdownItem 
-                        (click)="delete(tx)" 
-                        [disabled]="!canDelete(tx) || deletingId() === tx.id"
-                      >
-                        Delete
-                      </button>
-                    </li>
-                  </ul>
-                </c-dropdown>
-              </td>
-            </tr>
+                </td>
+                <td [attr.data-label]="'Description'" class="tx-td--desc" [ngClass]="'tx-desc--' + (tx.type | lowercase)">{{ tx.description }}</td>
+                <td [attr.data-label]="'Amount'" class="tx-td--amount">
+                  {{ tx.amount | number:'1.2-2' }} <span>{{ tx.currency }}</span>
+                </td>
+                <td [attr.data-label]="'Wallet'" class="tx-td--wallet">
+                  <ng-container *ngIf="tx.type === 'TRANSFER'">
+                    {{ walletName(tx.fromWalletId) }}
+                    <span class="small text-muted d-block">
+                      → {{ walletName(tx.toWalletId) }}
+                    </span>
+                  </ng-container>
+                  <ng-container *ngIf="tx.type !== 'TRANSFER'">
+                    {{ walletName(tx.walletId) }}
+                  </ng-container>
+                </td>
+                <td [attr.data-label]="'Status'" class="tx-td--status">
+                  <div class="d-flex align-items-center justify-content-end gap-2 mobile-status-container">
+                    <span class="badge" [ngClass]="{'bg-success': tx.status === 'POSTED', 'bg-secondary': tx.status === 'DELETED'}">
+                      {{ tx.status }}
+                    </span>
+                    <button 
+                      *ngIf="hasExpandableItems(tx)" 
+                      class="btn-expand p-0 border-0 bg-transparent text-secondary" 
+                      (click)="toggleExpand(tx, $event)" 
+                      [class.expanded]="isExpanded(tx.id)"
+                      title="Show details"
+                    >
+                      <svg cIcon name="cilChevronBottom"></svg>
+                    </button>
+                  </div>
+                </td>
+                <td class="tx-td--actions text-end">
+                  <c-dropdown alignment="end" variant="btn-group">
+                    <button cButton cDropdownToggle color="transparent" size="sm" class="tx-dots p-0 border-0">
+                      ⋮
+                    </button>
+                    <ul cDropdownMenu>
+                      <li>
+                        <button cDropdownItem (click)="openSplit(tx)" [disabled]="tx.status !== 'POSTED'">
+                          ✂️ Split
+                        </button>
+                      </li>
+                      <li><hr cDropdownDivider></li>
+                      <li>
+                        <button 
+                          cDropdownItem 
+                          (click)="delete(tx)" 
+                          [disabled]="!canDelete(tx) || deletingId() === tx.id"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </li>
+                    </ul>
+                  </c-dropdown>
+                </td>
+              </tr>
+              
+              <!-- Expansion Row -->
+              <tr *ngIf="isExpanded(tx.id)" class="tx-details-row">
+                <td colspan="8" class="p-0 border-0">
+                  <div class="tx-details-panel">
+                      <div *ngIf="isLoadingItems(tx.id)" class="text-center p-3 text-muted">
+                        <c-spinner size="sm" class="me-2"></c-spinner> Loading items...
+                      </div>
+                      
+                      <div *ngIf="getItemsError(tx.id)" class="text-center p-3 text-danger">
+                        {{ getItemsError(tx.id) }} 
+                        <button class="btn btn-link btn-sm p-0 ms-2" (click)="loadItemsIfNeeded(tx.id)">Retry</button>
+                      </div>
+                      
+                      <div *ngIf="!isLoadingItems(tx.id) && !getItemsError(tx.id)" class="item-list">
+                        <div *ngFor="let item of getItemsFor(tx.id)" class="item-row d-flex justify-content-between align-items-center py-2 px-3 border-bottom bg-light">
+                            <div class="d-flex flex-column">
+                              <span class="fw-semibold small">{{ item.name }}</span>
+                              <span class="small text-muted" style="font-size: 0.7rem;">
+                                {{ item.category }} <span *ngIf="item.note" class="fst-italic"> • {{item.note}}</span>
+                              </span>
+                            </div>
+                            <div class="fw-semibold small">
+                              {{ item.amount | number:'1.2-2' }} <small class="text-muted">{{ tx.currency }}</small>
+                            </div>
+                        </div>
+                        <div *ngIf="getItemsFor(tx.id).length === 0" class="p-3 text-center small text-muted fst-italic">
+                            No items found for this transactions.
+                        </div>
+                      </div>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
           </tbody>
         </table>
 
