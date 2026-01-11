@@ -24,6 +24,10 @@ export const routes: Routes = [
         loadChildren: () => import('./views/pages/wallets/routes').then((m) => m.routes)
       },
       {
+        path: 'transactions',
+        loadChildren: () => import('./views/pages/transactions/routes').then((m) => m.routes)
+      },
+      {
         path: 'theme',
         loadChildren: () => import('./views/theme/routes').then((m) => m.routes)
       },

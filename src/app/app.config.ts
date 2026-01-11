@@ -13,6 +13,7 @@ import { DropdownModule, SidebarModule } from '@coreui/angular';
 import { IconSetService } from '@coreui/icons-angular';
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
+import { debugHttpInterceptor } from './interceptors/debug-http.interceptor';
 import { KeycloakService } from 'keycloak-angular';
 import { keycloakConfig } from '../environments/keycloak.config';
 import { LockService } from './services/lock.service';
@@ -143,7 +144,7 @@ export const appConfig: ApplicationConfig = {
       withEnabledBlockingInitialNavigation(),
       withViewTransitions()
     ),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, debugHttpInterceptor])),
     importProvidersFrom(SidebarModule, DropdownModule),
     IconSetService,
     provideAnimationsAsync(),

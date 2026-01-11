@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transactions (Mockup)</title>
+  <style>
+    :root {
+      --bg-gray: #f2f3f7;
+      --text-dark: #333333;
+      --text-muted: #8e8e93;
+      --accent-purple: #8e7cc3;
+      --accent-green: #5a8d66;
+      --card-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-gray);
+      color: var(--text-dark);
+      padding: 1rem;
+    }
+
+    .page {
+      max-width: 60rem;
+      margin: 0 auto;
+    }
+
+    .header {
+      padding: 0.75rem 0.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.28em;
+      font-weight: 600;
+      color: #2c2c2e;
+    }
+
+    .add-button {
+      width: 2.75em;
+      height: 2.75em;
+      background: #fff;
+      border: 1px solid #e5e5ea;
+      border-radius: 0.6rem;
+      font-size: 1.35em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #555;
+      line-height: 1;
+    }
+
+    /* Filters */
+    .filters {
+      background: #fff;
+      margin: 0.5rem 0;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      box-shadow: var(--card-shadow);
+    }
+
+    .filters label {
+      display: block;
+      font-size: 0.88em;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .filters select,
+    .filters input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #e5e5ea;
+      border-radius: 0.5rem;
+      font-size: 1em;
+      background-color: #fff;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .filter-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .status-select {
+      border: 1px solid #e5e5ea;
+      padding: 0.45rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 1em;
+      color: #444;
+      background: #fff;
+      white-space: nowrap;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .btn {
+      border: none;
+      padding: 0.55rem 0.85rem;
+      border-radius: 0.5rem;
+      color: #fff;
+      font-size: 0.95em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-purple { background-color: var(--accent-purple); }
+    .btn-gray { background-color: #6e6e73; }
+
+    /* Summary */
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.75rem;
+      margin: 0.75rem 0 1rem;
+    }
+
+    .summary-card {
+      background: #fff;
+      padding: 0.75rem;
+      border-radius: 0.6rem;
+      border: 1px solid #e5e5ea;
+    }
+
+    .summary-card .label {
+      display: block;
+      font-size: 0.88em;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-card .value {
+      font-size: 1.3em;
+      font-weight: 600;
+    }
+
+    .negative { color: #cf6679; }
+
+    /* Transactions: single source of truth table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.5rem;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      vertical-align: top;
+    }
+
+    th { font-weight: 600; }
+
+    /* Mobile (<=720px): transform table rows into cards via CSS only */
+    @media (max-width: 45rem) {
+      thead { display: none; }
+
+      table { border-collapse: separate; border-spacing: 0 0.75rem; }
+
+      tbody, tr, td { display: block; width: 100%; }
+
+      tr {
+        position: relative;
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.12);
+        border-radius: 0.75rem;
+        box-shadow: var(--card-shadow);
+        padding: 0.9rem 0.9rem 0.75rem;
+      }
+
+      td {
+        border: 0;
+        padding: 0.35rem 0;
+      }
+
+      td[data-label] {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.9rem;
+      }
+
+      td[data-label]::before {
+        content: attr(data-label);
+        font-size: 0.85em;
+        font-weight: 500;
+        color: rgba(0,0,0,0.55);
+      }
+
+      .meta { font-size: 0.85em; color: rgba(0,0,0,0.55); }
+      .typecat { font-size: 1.1em; font-weight: 600; }
+      .desc { font-size: 0.95em; }
+      .amount { font-size: 1.25em; font-weight: 600; }
+      .wallet { font-size: 0.95em; font-weight: 500; color: rgba(0,0,0,0.65); }
+
+      .badge {
+        background-color: var(--accent-green);
+        color: #fff;
+        padding: 0.45em 0.8em;
+        border-radius: 0.5rem;
+        font-size: 0.8em;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .actions {
+        position: absolute;
+        top: 0.65rem;
+        right: 0.55rem;
+        padding: 0;
+      }
+
+      .actions::before { display: none; }
+
+      .dots {
+        font-size: 1.15em;
+        color: rgba(0,0,0,0.35);
+      }
+
+      /* Avoid collisions with actions */
+      .pad-right { padding-right: 2.6em; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <h1>Transactions</h1>
+      <button class="add-button" aria-label="Add transaction">+</button>
+    </header>
+
+    <section class="filters">
+      <div class="filter-grid">
+        <div>
+          <label>Wallet (optional)</label>
+          <select><option>All wallets</option></select>
+        </div>
+        <div>
+          <label>From</label>
+          <input type="text" placeholder="mm/dd/yyyy" />
+        </div>
+        <div>
+          <label>To</label>
+          <input type="text" placeholder="mm/dd/yyyy" />
+        </div>
+      </div>
+      <div class="filter-bottom">
+        <div class="status-select">Status Posted ⌵</div>
+        <div class="btn-row">
+          <button class="btn btn-purple" aria-label="Apply">🔍</button>
+          <button class="btn btn-gray">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-row">
+      <div class="summary-card">
+        <span class="label">💰 Total income</span>
+        <span class="value">0</span>
+      </div>
+      <div class="summary-card">
+        <span class="label">💳 Total expense</span>
+        <span class="value">414</span>
+      </div>
+      <div class="summary-card">
+        <span class="label">🧮 Net</span>
+        <span class="value negative">-414</span>
+      </div>
+    </section>
+
+    <table aria-label="Transactions">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type/Category</th>
+          <th>Description</th>
+          <th style="text-align:right;">Amount</th>
+          <th>Wallet</th>
+          <th>Status</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="meta pad-right" data-label="Date">1/10/26, 7:47 PM</td>
+          <td class="typecat" data-label="Type">🚗 Expense • Accident</td>
+          <td class="desc" data-label="Description" style="color:#cf6679;">Major car repair, all fixed now...</td>
+          <td class="amount pad-right" data-label="Amount" style="text-align:right;">400 USD</td>
+          <td class="wallet" data-label="Wallet">Holiday Fund</td>
+          <td data-label="Status"><span class="badge">POSTED</span></td>
+          <td class="actions" data-label="Actions" style="text-align:right;"><span class="dots">⋮</span></td>
+        </tr>
+
+        <tr>
+          <td class="meta pad-right" data-label="Date">1/10/26, 7:32 PM</td>
+          <td class="typecat" data-label="Type">🥗 Expense • Food</td>
+          <td class="desc" data-label="Description" style="color:#5a8d66;">Quick snack on the go...</td>
+          <td class="amount pad-right" data-label="Amount" style="text-align:right;">14 PLN</td>
+          <td class="wallet" data-label="Wallet">Millennium — Checking Account</td>
+          <td data-label="Status"><span class="badge">POSTED</span></td>
+          <td class="actions" data-label="Actions" style="text-align:right;"><span class="dots">⋮</span></td>
+        </tr>
+
+        <tr>
+          <td class="meta pad-right" data-label="Date">1/5/26, 4:10 PM</td>
+          <td class="typecat" data-label="Type">💰 Income • Salary</td>
+          <td class="desc" data-label="Description" style="color:#4a6fa5;">Monthly paycheck has arrived!</td>
+          <td class="amount pad-right" data-label="Amount" style="text-align:right;">6,000 USD</td>
+          <td class="wallet" data-label="Wallet">Checking Account</td>
+          <td data-label="Status"><span class="badge">POSTED</span></td>
+          <td class="actions" data-label="Actions" style="text-align:right;"><span class="dots">⋮</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

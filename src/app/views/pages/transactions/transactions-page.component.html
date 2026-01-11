@@ -1,0 +1,363 @@
+<c-modal
+  alignment="center"
+  [visible]="createVisible()"
+  (visibleChange)="handleCreateVisibleChange($event)"
+  size="lg"
+>
+  <c-modal-header>
+    <h5 cModalTitle>Create transaction</h5>
+    <button cButtonClose></button>
+  </c-modal-header>
+  <c-modal-body>
+    <div *ngIf="createError()" class="alert alert-danger mb-3" role="alert">
+      {{ createError() }}
+    </div>
+
+    <form [formGroup]="createForm" class="row g-3" novalidate>
+      <div class="col-12 col-md-4">
+        <label cLabel for="txType">Type</label>
+        <select
+          cFormControl
+          id="txType"
+          formControlName="type"
+          [class.is-invalid]="typeCtrl.touched && typeCtrl.invalid"
+        >
+          <option value="EXPENSE">Expense</option>
+          <option value="INCOME">Income</option>
+          <option value="TRANSFER">Transfer</option>
+        </select>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label cLabel for="txAmount">Amount</label>
+        <input
+          cFormControl
+          id="txAmount"
+          type="number"
+          step="0.01"
+          formControlName="amount"
+          placeholder="0.00"
+          [class.is-invalid]="amountCtrl.touched && amountCtrl.invalid"
+        />
+        <c-form-feedback *ngIf="amountCtrl.touched && amountCtrl.hasError('required')" [valid]="false">
+          Amount is required.
+        </c-form-feedback>
+        <c-form-feedback *ngIf="amountCtrl.touched && amountCtrl.hasError('min')" [valid]="false">
+          Amount must be greater than 0.
+        </c-form-feedback>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label cLabel for="txDate">Transaction date</label>
+        <input
+          cFormControl
+          id="txDate"
+          type="datetime-local"
+          formControlName="transactionDateLocal"
+          [class.is-invalid]="transactionDateLocalCtrl.touched && transactionDateLocalCtrl.invalid"
+        />
+        <c-form-feedback
+          *ngIf="transactionDateLocalCtrl.touched && transactionDateLocalCtrl.hasError('required')"
+          [valid]="false"
+        >
+          Transaction date is required.
+        </c-form-feedback>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label cLabel for="txCategory">Category</label>
+        <input cFormControl id="txCategory" type="text" formControlName="category" placeholder="Food" />
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label cLabel for="txDescription">Description</label>
+        <input cFormControl id="txDescription" type="text" formControlName="description" placeholder="Lunch" />
+      </div>
+
+      <!-- Expense/Income wallet -->
+      <div class="col-12" *ngIf="createType() !== 'TRANSFER'">
+        <label cLabel for="txWallet">Wallet</label>
+        <select
+          cFormControl
+          id="txWallet"
+          formControlName="walletId"
+          [class.is-invalid]="walletIdCtrl.touched && walletIdCtrl.invalid"
+        >
+          <option value="">Select a wallet...</option>
+          <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }})</option>
+        </select>
+        <c-form-feedback *ngIf="walletIdCtrl.touched && walletIdCtrl.hasError('required')" [valid]="false">
+          Wallet is required for Expense/Income.
+        </c-form-feedback>
+      </div>
+
+      <!-- Transfer wallets -->
+      <ng-container *ngIf="createType() === 'TRANSFER'">
+        <div class="col-12 col-md-6">
+          <label cLabel for="txFromWallet">From wallet</label>
+          <select
+            cFormControl
+            id="txFromWallet"
+            formControlName="fromWalletId"
+            [class.is-invalid]="fromWalletIdCtrl.touched && fromWalletIdCtrl.invalid"
+          >
+            <option value="">Select a wallet...</option>
+            <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }})</option>
+          </select>
+          <c-form-feedback *ngIf="fromWalletIdCtrl.touched && fromWalletIdCtrl.hasError('required')" [valid]="false">
+            From wallet is required.
+          </c-form-feedback>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label cLabel for="txToWallet">To wallet</label>
+          <select
+            cFormControl
+            id="txToWallet"
+            formControlName="toWalletId"
+            [class.is-invalid]="toWalletIdCtrl.touched && toWalletIdCtrl.invalid"
+          >
+            <option value="">Select a wallet...</option>
+            <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }} ({{ w.currency }})</option>
+          </select>
+          <c-form-feedback *ngIf="toWalletIdCtrl.touched && toWalletIdCtrl.hasError('required')" [valid]="false">
+            To wallet is required.
+          </c-form-feedback>
+        </div>
+
+        <div class="col-12" *ngIf="transferSameWalletError()">
+          <div class="alert alert-warning mb-0" role="alert">
+            From and To wallets must be different.
+          </div>
+        </div>
+      </ng-container>
+
+      <div class="col-12" *ngIf="createPermissionHint()">
+        <div class="alert alert-warning mb-0" role="alert">
+          {{ createPermissionHint() }}
+        </div>
+      </div>
+    </form>
+  </c-modal-body>
+  <c-modal-footer>
+    <button cButton color="secondary" type="button" (click)="handleCreateVisibleChange(false)">
+      Cancel
+    </button>
+    <button
+      cButton
+      color="primary"
+      type="button"
+      (click)="submitCreate()"
+      [disabled]="createLoading()"
+    >
+      <c-spinner *ngIf="createLoading()" size="sm" class="me-2" aria-hidden="true"></c-spinner>
+      Create
+    </button>
+  </c-modal-footer>
+</c-modal>
+
+<c-row>
+  <c-col xs="12">
+    <c-card class="mb-4">
+      <c-card-header class="d-flex align-items-center justify-content-between">
+        <span class="tx-title">Transactions</span>
+        <div class="d-flex align-items-center gap-2">
+          <!-- Desktop/tablet: match screenshot buttons -->
+          <button cButton color="secondary" type="button" (click)="refresh()" class="d-none d-md-inline-flex">
+            Refresh
+          </button>
+
+          <button
+            cButton
+            color="success"
+            type="button"
+            (click)="openCreate()"
+            class="d-none d-md-inline-flex"
+          >
+            <svg cIcon name="cilPlus" class="me-2"></svg>
+            Create
+          </button>
+
+          <!-- Mobile: round + button (matches reference) -->
+          <button
+            cButton
+            color="light"
+            variant="outline"
+            type="button"
+            (click)="openCreate()"
+            class="tx-add-btn d-md-none"
+            aria-label="Add transaction"
+          >
+            <svg cIcon name="cilPlus"></svg>
+          </button>
+        </div>
+      </c-card-header>
+      <c-card-body>
+        <div *ngIf="errorMessage()" class="alert alert-danger mb-3" role="alert">
+          {{ errorMessage() }}
+        </div>
+
+        <!-- Filters Section -->
+        <c-card class="mb-3 tx-filters">
+          <c-card-body>
+            <form [formGroup]="filtersForm" class="row g-3 tx-filters-grid" novalidate>
+              <!-- Wallet -->
+              <div class="col-12 col-md-3 filter-group">
+                <label cLabel for="filterWallet">Wallet (optional)</label>
+                <select cFormControl id="filterWallet" formControlName="walletId">
+                  <option value="">All wallets</option>
+                  <option *ngFor="let w of wallets()" [value]="w.id">{{ w.name }}</option>
+                </select>
+              </div>
+
+              <!-- Dates -->
+              <div class="col-6 col-md-2 filter-group">
+                <label cLabel for="filterFrom">From</label>
+                <input cFormControl id="filterFrom" type="datetime-local" formControlName="fromLocal" />
+              </div>
+
+              <div class="col-6 col-md-2 filter-group">
+                <label cLabel for="filterTo">To</label>
+                <input cFormControl id="filterTo" type="datetime-local" formControlName="toLocal" />
+              </div>
+
+              <!-- Desktop-only filters -->
+              <div class="col-12 col-md-2 d-none d-md-block">
+                <label cLabel for="filterType">Type</label>
+                <select cFormControl id="filterType" formControlName="type">
+                  <option value="">All</option>
+                  <option value="EXPENSE">Expense</option>
+                  <option value="INCOME">Income</option>
+                  <option value="TRANSFER">Transfer</option>
+                </select>
+              </div>
+
+              <div class="col-12 col-md-3 d-none d-md-block">
+                <label cLabel for="filterQ">Search</label>
+                <input cFormControl id="filterQ" type="text" formControlName="q" placeholder="description/category" />
+              </div>
+
+              <!-- Bottom Row for Mobile -->
+              <div class="col-12 d-md-none d-flex justify-content-between align-items-center mt-3 filter-bottom-row">
+                 <div class="filter-status-wrapper">
+                    <select cFormControl id="filterStatusMobile" formControlName="status" class="status-select">
+                      <option value="POSTED">Status 💰</option>
+                      <option value="DELETED">Deleted</option>
+                    </select>
+                 </div>
+                 <div class="d-flex gap-2">
+                    <button cButton color="primary" class="btn-sm btn-purple" (click)="applyFilters()">
+                       Apply
+                    </button>
+                    <button cButton color="secondary" class="btn-sm btn-gray" (click)="clearFilters()">
+                       Clear
+                    </button>
+                 </div>
+              </div>
+
+              <!-- Desktop Actions -->
+              <div class="col-12 col-md-10 d-none d-md-flex align-items-end gap-2 filter-actions">
+                <div class="filter-group">
+                   <label cLabel for="filterStatus">Status</label>
+                   <select cFormControl id="filterStatus" formControlName="status">
+                     <option value="POSTED">Posted</option>
+                     <option value="DELETED">Deleted</option>
+                   </select>
+                </div>
+                <button cButton color="primary" type="button" (click)="applyFilters()" class="tx-apply">
+                  Apply
+                </button>
+                <button cButton color="secondary" type="button" (click)="clearFilters()">
+                  Clear
+                </button>
+              </div>
+            </form>
+          </c-card-body>
+        </c-card>
+
+        <div class="totals mb-3" *ngIf="totals() as t">
+          <div class="summary-card">
+            <span class="label">💰 Total income</span>
+            <span class="value">{{ t.totalIncome | number:'1.0-0' }}</span>
+          </div>
+          <div class="summary-card">
+            <span class="label">💳 Total expense</span>
+            <span class="value">{{ t.totalExpense | number:'1.0-0' }}</span>
+          </div>
+          <div class="summary-card">
+            <span class="label">🧮 Net</span>
+            <span class="value" [class.negative]="t.net < 0">{{ t.net | number:'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="loading()" class="d-flex align-items-center gap-2 text-body-secondary mb-3">
+          <c-spinner size="sm" aria-hidden="true"></c-spinner>
+          Loading transactions...
+        </div>
+
+        <div *ngIf="!loading() && transactions().length === 0" class="text-body-secondary">
+          No transactions found.
+        </div>
+
+        <!-- Single source of truth: real HTML table for all viewports. -->
+        <table *ngIf="!loading() && transactions().length > 0" cTable class="table table-hover align-middle tx-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th class="text-end">Amount</th>
+              <th>Currency</th>
+              <th>Wallet / From → To</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tx of transactions()">
+              <td [attr.data-label]="'Date'" class="tx-td--date">{{ txDateShort(tx.transactionDate) }}</td>
+              <td [attr.data-label]="'Type'" class="tx-td--type">{{ tx.type | titlecase }}</td>
+              <td [attr.data-label]="'Category'" class="tx-td--category">{{ tx.category }}</td>
+              <td [attr.data-label]="'Description'" class="tx-td--desc" [ngClass]="'tx-desc--' + (tx.type | lowercase)">{{ tx.description }}</td>
+              <td [attr.data-label]="'Amount'" class="tx-td--amount">
+                {{ tx.amount | number:'1.2-2' }} <span class="d-md-none">{{ tx.currency }}</span>
+              </td>
+              <td [attr.data-label]="'Currency'" class="tx-td--currency">{{ tx.currency }}</td>
+              <td [attr.data-label]="'Wallet'" class="tx-td--wallet">
+                {{ tx.walletName }}
+                <span *ngIf="tx.type === 'TRANSFER'" class="small text-muted d-block">
+                   → {{ tx.toWalletName }}
+                </span>
+              </td>
+              <td [attr.data-label]="'Status'" class="tx-td--status">
+                <span class="badge" [ngClass]="{'bg-success': tx.status === 'POSTED', 'bg-secondary': tx.status === 'DELETED'}">
+                  {{ tx.status }}
+                </span>
+              </td>
+              <td class="tx-td--actions text-end">
+                <c-dropdown alignment="end" variant="btn-group">
+                  <button cButton cDropdownToggle color="transparent" size="sm" class="tx-dots p-0 border-0">
+                    ⋮
+                  </button>
+                  <ul cDropdownMenu>
+                    <li>
+                      <button 
+                        cDropdownItem 
+                        (click)="delete(tx)" 
+                        [disabled]="!canDelete(tx) || deletingId() === tx.id"
+                      >
+                        Delete
+                      </button>
+                    </li>
+                  </ul>
+                </c-dropdown>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+      </c-card-body>
+    </c-card>
+  </c-col>
+</c-row>
