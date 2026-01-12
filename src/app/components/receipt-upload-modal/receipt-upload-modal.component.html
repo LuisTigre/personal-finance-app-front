@@ -1,0 +1,119 @@
+<c-modal [visible]="visible" (visibleChange)="handleVisibleChange($event)" size="lg" alignment="center">
+  <c-modal-header>
+    <h5 cModalTitle>Scan Receipt</h5>
+    <button cButtonClose (click)="handleVisibleChange(false)"></button>
+  </c-modal-header>
+
+  <c-modal-body>
+    <div *ngIf="errorMessage()" class="alert alert-danger mb-3" role="alert">
+      {{ errorMessage() }}
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div *ngIf="step() === 'UPLOAD'" class="text-center p-5 border rounded bg-light">
+      <div *ngIf="processing()" class="mb-3">
+        <c-spinner color="primary"></c-spinner>
+        <p class="mt-2 text-muted">Scanning receipt... Please wait.</p>
+      </div>
+      
+      <div *ngIf="!processing()">
+        <svg cIcon name="cilCloudDownload" size="3xl" class="text-secondary mb-3"></svg>
+        <h5>Upload Receipt Image</h5>
+        <p class="text-muted small mb-4">Support for JPEG, PNG</p>
+        
+        <input #fileInput type="file" accept="image/*" class="d-none" (change)="onFileSelected($event)">
+        <button cButton color="primary" (click)="fileInput.click()">
+          Choose File & Scan
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Review -->
+    <div *ngIf="step() === 'REVIEW'">
+      <form [formGroup]="form" class="row g-3">
+        <!-- Top Metadata -->
+        <div class="col-12 col-md-4">
+          <label cLabel for="rWallet">Wallet</label>
+          <select cFormSelect id="rWallet" formControlName="walletId" 
+                  [class.is-invalid]="form.get('walletId')?.touched && form.get('walletId')?.invalid">
+            <option value="">Select Wallet...</option>
+            <option *ngFor="let w of wallets" [value]="w.id">{{ w.name }} ({{ w.currency }})</option>
+          </select>
+          <c-form-feedback [valid]="false">Wallet is required</c-form-feedback>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label cLabel for="rDate">Date</label>
+            <input cFormControl type="datetime-local" id="rDate" formControlName="transactionDate">
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label cLabel for="rMerchant">Merchant</label>
+            <input cFormControl type="text" id="rMerchant" formControlName="merchant" placeholder="Store Name">
+        </div>
+
+        <div class="col-12 col-md-8">
+            <label cLabel for="rDesc">Description</label>
+            <input cFormControl type="text" id="rDesc" formControlName="description">
+        </div>
+
+        <div class="col-12 col-md-4">
+            <label cLabel for="rTotal">Total Amount</label>
+            <input cFormControl type="number" id="rTotal" formControlName="totalAmount" step="0.01">
+            <div class="form-text text-end" [class.text-danger]="isTotalMismatch" [class.text-success]="!isTotalMismatch">
+                Sum of items: {{ currentItemsSum | number:'1.2-2' }}
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="col-12 mt-4">
+            <h6>Items <small class="text-muted fw-normal">(Categorize each item to continue)</small></h6>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th style="width: 40%">Item</th>
+                            <th style="width: 20%">Amount</th>
+                            <th style="width: 30%">Category</th>
+                            <th style="width: 10%"></th>
+                        </tr>
+                    </thead>
+                    <tbody formArrayName="items">
+                        <tr *ngFor="let itemCtrl of itemsControls; let i = index" [formGroupName]="i">
+                            <td>
+                                <input cFormControl size="sm" type="text" formControlName="name" placeholder="Item name">
+                            </td>
+                            <td>
+                                <input cFormControl size="sm" type="number" formControlName="amount" step="0.01" placeholder="0.00">
+                            </td>
+                            <td>
+                                <input cFormControl size="sm" type="text" formControlName="category" placeholder="Required"
+                                       [class.is-invalid]="itemCtrl.get('category')?.touched && itemCtrl.get('category')?.invalid">
+                            </td>
+                            <td class="text-end">
+                                <button cButton color="transparent" size="sm" (click)="removeItem(i)" class="text-danger">
+                                    <svg cIcon name="cilTrash"></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button cButton color="light" size="sm" class="w-100" (click)="addItem()">
+                <svg cIcon name="cilPlus"></svg> Add Item
+            </button>
+        </div>
+      </form>
+    </div>
+  </c-modal-body>
+
+  <c-modal-footer>
+    <button cButton color="secondary" (click)="handleVisibleChange(false)">Cancel</button>
+    <ng-container *ngIf="step() === 'REVIEW'">
+        <button cButton color="primary" (click)="submit()" [disabled]="processing() || isTotalMismatch || form.invalid">
+            <c-spinner *ngIf="processing()" size="sm"></c-spinner>
+            Confirm & Save
+        </button>
+    </ng-container>
+  </c-modal-footer>
+</c-modal>

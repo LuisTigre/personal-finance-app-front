@@ -1,0 +1,12 @@
+:host {
+    display: block;
+}
+
+.table-responsive {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+input.ng-invalid.ng-touched {
+    border-color: var(--cui-form-invalid-border-color);
+}

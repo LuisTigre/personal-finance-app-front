@@ -163,6 +163,13 @@
   (saved)="handleSplitSaved()"
 ></app-transaction-split-modal>
 
+<app-receipt-upload-modal
+  [visible]="receiptVisible()"
+  [wallets]="wallets()"
+  (visibleChange)="handleReceiptVisibleChange($event)"
+  (saved)="handleReceiptSaved()"
+></app-receipt-upload-modal>
+
 <c-row>
   <c-col xs="12">
     <c-card class="mb-4">
@@ -170,7 +177,45 @@
         <span class="tx-title">Transactions</span>
         <div class="d-flex align-items-center gap-2">
           <!-- Desktop/tablet: match screenshot buttons -->
+          <button
+            cButton
+            color="primary"
+            class="d-none d-md-block"
+            (click)="openCreate()"
+          >
+            <svg cIcon name="cilPlus" class="me-2"></svg>
+            Add Transaction
+          </button>
+          <button
+            cButton
+            color="success"
+            class="text-white d-none d-md-block"
+            (click)="openReceipt()"
+          >
+            <svg cIcon name="cilCloudDownload" class="me-2"></svg>
+            Scan Receipt (OCR)
+          </button>
+          <button
+            cButton
+            color="light"
+            variant="outline"
+            class="d-none d-md-block"
+            (click)="refresh()"
+          >
+            <svg cIcon name="cilReload"></svg>
+          </button>
         
+          <button
+            cButton
+            color="success"
+            type="button"
+            (click)="openReceipt()"
+            class="d-md-none text-white me-2 rounded-circle shadow-sm"
+            style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background-color: #2eb85c !important; border: none;"
+            aria-label="Scan Receipt"
+          >
+            <svg cIcon name="cilCloudDownload"></svg>
+          </button>
           <button
             cButton
             color="light"
@@ -178,7 +223,7 @@
             type="button"
             (click)="refresh()"
             class="tx-add-btn d-md-none"
-            aria-label="Add transaction"
+            aria-label="Refresh"
           >
             <svg cIcon name="cilReload"></svg>
           </button>

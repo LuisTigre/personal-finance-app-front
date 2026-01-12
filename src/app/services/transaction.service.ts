@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { ConfirmReceiptResponse, ReceiptConfirmRequest, ReceiptOcrResponse } from '../models/receipt.models';
 
 export type TransactionType = 'EXPENSE' | 'INCOME' | 'TRANSFER';
 export type TransactionStatus = 'POSTED' | 'DELETED';
@@ -115,5 +116,15 @@ export class TransactionService {
 
   deleteTransaction(id: string): Observable<TransactionResponse> {
     return this.http.delete<TransactionResponse>(`/api/transactions/${id}`);
+  }
+
+  uploadReceipt(file: File): Observable<ReceiptOcrResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ReceiptOcrResponse>('/api/receipts/ocr', formData);
+  }
+
+  confirmReceipt(data: ReceiptConfirmRequest): Observable<ConfirmReceiptResponse> {
+    return this.http.post<ConfirmReceiptResponse>('/api/receipts/confirm', data);
   }
 }

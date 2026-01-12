@@ -28,6 +28,7 @@ import {
 } from '@coreui/angular';
 import { IconDirective } from '@coreui/icons-angular';
 import { TransactionSplitModalComponent } from '../../../components/transaction-split-modal/transaction-split-modal.component';
+import { ReceiptUploadModalComponent } from '../../../components/receipt-upload-modal/receipt-upload-modal.component';
 import { resolveEmoji } from '../../../shared/emoji/emoji-rules';
 import { finalize } from 'rxjs/operators';
 
@@ -130,7 +131,8 @@ function nowLocalDateTimeInputValue(): string {
     FormLabelDirective,
     FormControlDirective,
     FormFeedbackComponent,
-    TransactionSplitModalComponent
+    TransactionSplitModalComponent,
+    ReceiptUploadModalComponent
   ]
 })
 export class TransactionsPageComponent {
@@ -159,7 +161,9 @@ export class TransactionsPageComponent {
 
   readonly splitVisible = signal(false);
   readonly splitTransaction = signal<TransactionResponse | null>(null);
+readonly receiptVisible = signal(false);
 
+  
   // Expansion Logic State
   readonly expandedIds = signal<Set<string>>(new Set());
   readonly itemsByTransactionId = signal<Map<string, TransactionItem[]>>(new Map());
@@ -331,7 +335,7 @@ export class TransactionsPageComponent {
     }
   }
 
-  private loadItemsIfNeeded(id: string) {
+  loadItemsIfNeeded(id: string) {
     if (this.itemsByTransactionId().has(id)) {
       return;
     }
@@ -496,6 +500,20 @@ export class TransactionsPageComponent {
     }
     this.refresh();
   }
+
+  // Receipt
+  openReceipt() {
+    this.receiptVisible.set(true);
+  }
+
+  handleReceiptVisibleChange(visible: boolean) {
+    this.receiptVisible.set(visible);
+  }
+
+  handleReceiptSaved() {
+    this.refresh();
+    this.toast.success('Receipt scanned and saved successfully!', 'Success');
+  }  
 
   submitCreate(): void {
     if (this.createLoading()) {
